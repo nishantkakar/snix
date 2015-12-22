@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+import argparse
+import manifestParser
+import os
+import logging
+import snixLogger
+
+logger = snixLogger.SnixLogger.logger()
+
+class Snix:
+	"""The Actual Snix CLI command. Type snix --help for more information"""
+	def __init__(self):
+		self.cliParser = argparse.ArgumentParser()
+		self.manifest = manifestParser.Manifest()
+		self.buildCLIParser(self.cliParser)
+			
+	#TODO: shouldn't have to call this everytime.
+	#TODO : Could build this parser based on a File as well.
+	#TODO : how do I document each action
+	def buildCLIParser(self, cliParser):
+		cliParser.add_argument("action", help="An action that snix can perform be.")
+
+	def execute(self):
+		self.manifest.parseManifest()
+		args = self.cliParser.parse_args()
+		action = {
+			"init":self.init,
+		}.get(args.action,"list")
+		action()
+
+	def init(self):
+		"""The init command for snix. Sets up the required directories and tools required for Snix to work."""
+		self.__createDir(self.manifest.getConfigurationValue("workingDir"))
+		self.__createDir(self.manifest.getConfigurationValue("rcDir"))
+		self.manifest.getItem("homebrew").install()	
+
+	def __createDir(self, path):
+		dir = os.path.dirname(path)
+		if not os.path.exists(dir):
+			logger.info("Creating %s."%dir)
+			os.makedirs(dir)
+		else:
+			logger.info("%s already exists."%dir)
+
+
+if __name__ == "__main__":
+	snix = Snix()
+	snix.execute()

@@ -1,0 +1,19 @@
+#The config parser will have access to the environment variables. 
+
+[configuration]
+#A directory to use as a download location
+workingDir=%(PWD)s/tmp/
+
+#A location to dump any files that need to be sourced on shell startup
+rcDir=%(HOME)s/rc/
+
+[items]
+#A registry of items to install. Each item is a name value pair where the value could be one of several types. 
+#Name=<URL|Brew|localDirectory|command>
+#URL is a location where a DMG can be downloaded from. Ex : item1 = http://iterm.zip
+#Brew indicates that "Name" should be brewed. Ex: item2 = Brew
+#LocalDirectory is a local directory that contains custom install scripts and/or config files. Ex: item3 = ./item3
+
+homebrew = 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
+iTerm2 = https://iterm2.com/downloads/stable/iTerm2-2_1_4.zip
+coreutils = brew 
