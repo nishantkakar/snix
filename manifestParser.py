@@ -3,32 +3,47 @@
 import ConfigParser
 import os
 import snixItem
+import snixCore
 
-MANIFEST = os.path.join(os.environ['PWD'],"manifest")
+MANIFEST = os.path.join(os.environ['PWD'],"manifest.ini")
 
-#TODO : A static factory like method that would initialize the Manifest and parse it before returning an object
 class Manifest:
-	def __init__(self, manifest=MANIFEST):
-		if not os.path.isfile(manifest):
-			raise ValueError("%s is not a valid file path."%manifest)
-		self.manifest = manifest
-		self.config = ConfigParser.SafeConfigParser(os.environ)
+	"""Reprents the parsed version of the manifet that contains snix coniguration."""
+	__metaclass__ = snixCore.Singleton
 
-	def parseManifest(self):
-		self.config.read(self.manifest)
+	@staticmethod
+	def parse(file=MANIFEST):
+		manifest = Manifest(file)
+		manifest._parseManifest()
+		return manifest
+		
+	def __init__(self, file=MANIFEST):
+		if not os.path.isfile(file):
+			raise ValueError("%s is not a valid file path."%file)
+		self.parser = ConfigParser.SafeConfigParser(os.environ)
+		self.file = file
+
+	def _parseManifest(self):
+		self.parser.read(self.file)
+		self.config = dict(self.parser.items("configuration"))
 	
 	# make this take in a filter. 
 	def getItems(self):
-		return self.config.items("items")
+		rint(self.parser.items("items"))
+		return list(map(self.getItem,self.parser.items("items")))
+		#return self.parser.items("items")
 
 	def getConfigurationValue(self, key):
-		return self.config.get("configuration",key)
-
-	def getItem(self, key):
-		#TODO : what if the key is invalid.
-		return snixItem.Item(key,snixItem.Installer.forItem(self.config.get("items",key).strip('\'')))
+		return self.config[key.lower()]
+	
+	def getItem(self, key):	
+		if not self.parser.has_option("items",key):
+			return snixItem.MissingItem(key)
+		else:
+			# TODO : what if value is between "" and not ''
+			self.config[key] = self.parser.get("items", key).strip('\'')
+			return snixItem.Item(key, self.config)
 
 if __name__ == "__main__":
-	manifest = Manifest()
-	manifest.parseManifest()
+	manifest = Manifest.parse()
 	print(manifest.getItems())

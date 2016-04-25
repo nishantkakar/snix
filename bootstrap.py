@@ -10,6 +10,9 @@ import sys
 HOME = os.environ['HOME']
 DEVNULL = open(os.devnull, 'w')
 
+SNIX_DIRNAME="snix"
+SNIX_CODE_DIRNAME="__snix__"
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s-%(levelname)s-%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 
@@ -50,7 +53,7 @@ def installXCodeCLI():
 	
 def xCodeCLI():
 	"""Ensures that Xcode Developer Tools gets installed."""
-	logger.info("Xcode Developer Tools")
+	logger.info("Installing Xcode Developer Tools")
 	global DEVNULL
 	waitForInstall = False
 	for i in range(1,5):
@@ -70,26 +73,35 @@ def xCodeCLI():
 				waitForInstall = True
 
 @precondition(networkUp)
-def gitcloneSNIX(snixDir):
-	"""Clones the SNIX repository from Github."""
+def gitcloneSnix(snixDir):
+	"""Clones the Snix repository from Github."""
 	try:
 		subprocess.check_call(["git","clone","https://github.com/yaise/snix.git",snixDir],stdin=None,shell=False)
 	except subprocess.CalledProcessError as e:
 		abort("{0} exited with error code{1}".format(e.cmd,e.returncode))
 
-def setupSNIX(destinationDir):
-	"""Ensures that SNIX repository is setup."""
-	logger.info("SNIX in {0}".format(destinationDir))
+def setupSnix(destinationDir):
+	"""Ensures that Snix repository is setup."""
+	logger.info("Setting up Snix in {0}".format(destinationDir))
 	global DEVNULL
+	global SNIX_DIRNAME
+	global SNIX_CODE_DIRNAME
 	if not os.path.isdir(destinationDir):
 		abort("{0} is not a valid directory".format(destinationDir))
-	snixDir = os.path.join(destinationDir,"snix")
-	if os.path.exists(snixDir) and not os.path.exists(os.path.join(snixDir,".git")):
-		abort("{0} doesn't seem to have a valid git repository. Deleting {0} is recommended.".format(snixDir))
-	if not os.path.exists(snixDir):
-		logger.info("{0} repository not found. Will clone from Github.".format(snixDir))
-		gitcloneSNIX(snixDir)
-	logger.info("Switching to SNIX directory: {0}".format(snixDir))
+	snixDir = os.path.join(destinationDir,SNIX_DIRNAME)
+	snixCodeDir = os.path.join(snixDir,SNIX_CODE_DIRNAME)
+	if os.path.exists(snixDir):
+		if os.path.exists(snixCodeDir)  and if os.path.exists(not os.path.exists(os.path.join(snixCodeDir,".git")):
+		abort("{0} . Deleting {0} is recommended.".format(snixDir))
+	else:
+		logger.info("Setting up Snix")
+		logger.info("Creating  {0}".format(snixDir)) 
+		not found. Will clone from Github.".format(snixDir))
+		gitcloneSnix(snixDir)
+	return snixDir
+
+def snixInit(snixDir):
+	logger.info("Switching to Snix directory: {0}".format(snixDir))
 	os.chdir(snixDir)
 	subprocess.call(os.path.join(snixDir,"snix") + " init",shell=True)
 
@@ -100,11 +112,21 @@ def getBootstrapForThisOS():
 
 def bootstrapMac():
 	xCodeCLI()
-		
+
+#TODO Need to differentiate between snix( the core project ) and the custom snix install for the client. Check if there's a way to package a snix project. otherwise dump everything in a /bin folder
+# what should be the landing folder name : snix
+# what should be the sub folder name where snix gets installed ; __snix__
+# put the required binaries or soft links into snix/bin folder. put snix/bin on the path.  
+# put a sample.manifest in a snix/
+# put a README in snix/ Mention why this structure exists. if someone changes files, they should branch it out first or perhaps when I pull down snix I can create a local branch for edits
+# put a .gitignore file that ignores __snix__ and the bin/ and the sample.manifest and the README file. 
 def bootstrap():
+	logger.info("Hi! there. Let's get started!")
 	osBootstrap = getBootstrapForThisOS()
 	osBootstrap()
-	setupSNIX(HOME)
+	snixDir = setupSnix(HOME)
+	logger.info("----->Bootstrap DONE. Handing over to Snix.<-----")
+	snixInit(snixDir)
 
 if __name__ == "__main__":
 	bootstrap()

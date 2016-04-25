@@ -12,22 +12,29 @@ class Snix:
 	"""The Actual Snix CLI command. Type snix --help for more information"""
 	def __init__(self):
 		self.cliParser = argparse.ArgumentParser()
-		self.manifest = manifestParser.Manifest()
+		self.manifest = manifestParser.Manifest.parse()
 		self.buildCLIParser(self.cliParser)
 			
 	#TODO: shouldn't have to call this everytime.
 	#TODO : Could build this parser based on a File as well.
 	#TODO : how do I document each action
 	def buildCLIParser(self, cliParser):
-		cliParser.add_argument("action", help="An action that snix can perform be.")
+		cliParser.add_argument("action", help = "An action that snix can perform.", choices=['init','install'])
+		cliParser.add_argument("argument", help = "Additional argument for a specified action", nargs = '?')
 
 	def execute(self):
-		self.manifest.parseManifest()
 		args = self.cliParser.parse_args()
 		action = {
 			"init":self.init,
-		}.get(args.action,"list")
-		action()
+			"install":self.install,
+		}.get(args.action)
+		if args.argument:
+			self.perform(action, args.argument)
+		else:
+			self.perform(action)
+
+	def perform(self, action, *args):
+		action(*args)
 
 	def init(self):
 		"""The init command for snix. Sets up the required directories and tools required for Snix to work."""
@@ -43,6 +50,12 @@ class Snix:
 		else:
 			logger.info("%s already exists."%dir)
 
+	def install(self, name):
+		"""The install command will install an item from the manifest."""
+		if name == "all":
+			items = self.manifest.getItems()
+		else:
+			self.manifest.getItem(name).install()	
 
 if __name__ == "__main__":
 	snix = Snix()

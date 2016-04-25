@@ -1,0 +1,22 @@
+#The Snix Manifest. This is where you tell Snix what to do.
+#You can specify commands that snix will parse and execute on your behalf. 
+
+#The use command is a way of importing configurations into the Snix runtime.
+# For ex. you could use os.env to specify that you want to Snix to have access to the environment variables. 
+# you could also specify a configuration file that snix will parse for you. 
+read config from os.env
+
+#The set command is a way to set a property that will be visible to the snix runtime.
+set workingDir as "${PWD}/tmp"
+set rcDir as "${PWD}/rc"
+
+# The install command is a way to ask snix to install an item via one of the supported mechanism
+install homebrew via command('ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"')
+install coreutils via brew 
+install iterm2 via brew
+install google-chrome via brew
+
+#[customizations]
+configure vim via script("")
+configure zsh via script("")
+configure mac via script("")

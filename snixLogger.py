@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import snixCore
 
 class ColorizedStreamHandler(logging.StreamHandler):
 		
@@ -42,17 +43,10 @@ class ColorizedStreamHandler(logging.StreamHandler):
 			if params:
 				message = ''.join((self.csi, ';'.join(params),'m',message,self.reset)) 
 		return message
-	
-class Singleton(type):
-	instance = None
-	def __call__(cls, *args, **kwargs):
-		if cls.instance is None:
-			cls.instance = super(Singleton,cls).__call__(*args,**kwargs)
-		return cls.instance
 
 class SnixLogger:
 	"""A Colorized Logger that can be used aross Snix. This is a singleton. """
-	__metaclass__ = Singleton
+	__metaclass__ = snixCore.Singleton
 
 	def __init__(self):
 		self.logger = logging.getLogger("SNIX")
