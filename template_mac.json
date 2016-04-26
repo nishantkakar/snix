@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title":"root",
+  "type":"object",
+  "properties": {
+    "include": {
+      "description": "Include files from another team/coworker/friend. Should be a git repo",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "config":{
+      "description": "Properties that snix will use. Configs defined here will override conflicting includes.",
+      "type": "object"
+    },
+    "items":{
+      "description": "Items that will be installed by snix. Will be combined with those from the include files",
+      "type":"array",
+      "minItems":1,
+      "items":{
+        "type":"object",
+        "required":["name","via"],
+        "properties":{
+          "name":{
+            "type":"string",
+            "minLength":1,
+            "maxLength":100
+          },
+          "download_url":{
+              "type":"string"
+          },
+          "via":{
+            "enum":["brew", "brew-cask" ,"dmg"]
+          }
+        }
+      },
+      "customizations":{
+        "description":"Customizations that will be run by snix. Customizations will override conflicting includes.",
+        "type":"object",
+        "required":["name","scriptLocation"],
+        "properties":{
+          "name":{
+            "type":"string",
+            "minLength":1,
+            "maxLength":"100"
+          },
+          "scriptLocation":{
+            "description":"Location of a customization script. Scripts must reside in the same directory as the manifest.",
+            "type":"string",
+            "minLength":1
+          }
+        }
+      }
+    }
+  }
+
+
+}

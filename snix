@@ -8,55 +8,58 @@ import snixLogger
 
 logger = snixLogger.SnixLogger.logger()
 
+
 class Snix:
-	"""The Actual Snix CLI command. Type snix --help for more information"""
-	def __init__(self):
-		self.cliParser = argparse.ArgumentParser()
-		self.manifest = manifestParser.Manifest.parse()
-		self.buildCLIParser(self.cliParser)
-			
-	#TODO: shouldn't have to call this everytime.
-	#TODO : Could build this parser based on a File as well.
-	#TODO : how do I document each action
-	def buildCLIParser(self, cliParser):
-		cliParser.add_argument("action", help = "An action that snix can perform.", choices=['init','install'])
-		cliParser.add_argument("argument", help = "Additional argument for a specified action", nargs = '?')
+    """The Actual Snix CLI command. Type snix --help for more information"""
 
-	def execute(self):
-		args = self.cliParser.parse_args()
-		action = {
-			"init":self.init,
-			"install":self.install,
-		}.get(args.action)
-		if args.argument:
-			self.perform(action, args.argument)
-		else:
-			self.perform(action)
+    def __init__(self):
+        self.cliParser = argparse.ArgumentParser()
+        self.manifest = manifestParser.Manifest.parse()
+        self.buildCLIParser(self.cliParser)
 
-	def perform(self, action, *args):
-		action(*args)
+    # TODO: shouldn't have to call this everytime.
+    # TODO : Could build this parser based on a File as well.
+    # TODO : how do I document each action
+    def buildCLIParser(self, cliParser):
+        cliParser.add_argument("action", help="An action that snix can perform.", choices=['init', 'install'])
+        cliParser.add_argument("argument", help="Additional argument for a specified action", nargs='?')
 
-	def init(self):
-		"""The init command for snix. Sets up the required directories and tools required for Snix to work."""
-		self.__createDir(self.manifest.getConfigurationValue("workingDir"))
-		self.__createDir(self.manifest.getConfigurationValue("rcDir"))
-		self.manifest.getItem("homebrew").install()	
+    def execute(self):
+        args = self.cliParser.parse_args()
+        action = {
+            "init": self.init,
+            "install": self.install,
+        }.get(args.action)
+        if args.argument:
+            self.perform(action, args.argument)
+        else:
+            self.perform(action)
 
-	def __createDir(self, path):
-		dir = os.path.dirname(path)
-		if not os.path.exists(dir):
-			logger.info("Creating %s."%dir)
-			os.makedirs(dir)
-		else:
-			logger.info("%s already exists."%dir)
+    def perform(self, action, *args):
+        action(*args)
 
-	def install(self, name):
-		"""The install command will install an item from the manifest."""
-		if name == "all":
-			items = self.manifest.getItems()
-		else:
-			self.manifest.getItem(name).install()	
+    def init(self):
+        """The init command for snix. Sets up the required directories and tools required for Snix to work."""
+        self.__createDir(self.manifest.getConfigurationValue("workingDir"))
+        self.__createDir(self.manifest.getConfigurationValue("rcDir"))
+        self.manifest.getItem("homebrew").install()
+
+    def __createDir(self, path):
+        dir = os.path.dirname(path)
+        if not os.path.exists(dir):
+            logger.info("Creating %s." % dir)
+            os.makedirs(dir)
+        else:
+            logger.info("%s already exists." % dir)
+
+    def install(self, name):
+        """The install command will install an item from the manifest."""
+        if name == "all":
+            items = self.manifest.getItems()
+        else:
+            self.manifest.getItem(name).install()
+
 
 if __name__ == "__main__":
-	snix = Snix()
-	snix.execute()
+    snix = Snix()
+    snix.execute()
