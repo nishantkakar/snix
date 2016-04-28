@@ -25,4 +25,4 @@ class Repo:
             logger.info(msg + 'Done!')
 
     def _build_cmd(self):
-        return "git clone " + self._context['repo_location'], False
+        return "git clone --progress " + self._context['repo_location'], False

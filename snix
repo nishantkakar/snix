@@ -2,10 +2,7 @@
 
 import argparse
 from context import Context
-import os
-import logging
 
-import snixCore
 from snixLogger import SnixLogger
 
 logger = SnixLogger.logger()

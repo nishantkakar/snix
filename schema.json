@@ -17,7 +17,7 @@
   },
   "type": "object",
   "properties": {
-    "include": {
+    "includes": {
       "description": "Include files from another team/coworker/friend. Should be a git repo in github under the org",
       "type": "array",
       "minItems": 1,

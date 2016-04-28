@@ -9,6 +9,7 @@ from repo import Repo
 from script import Script
 
 
+
 class Context:
     """A parser that will build an in-memory representation of a snix manifest."""
     __metaclass__ = singleton.Singleton
@@ -23,21 +24,62 @@ class Context:
         if not os.path.isfile(_file):
             snixCore.abort("%s is not a valid file path!" % _file)
         self._file = _file
+        self._manifest_config = {}
+        self._manifest_items = []
+        self._manifest_repos = []
+        self._manifest_custom_scripts = []
 
     # TODO navigate all includes.
     # make sure it doesn' have cycles.
     def _construct(self):
         with open(self._file, 'r') as candidate:
             _data = json.load(candidate)
-            # if 'include' in _data:
-            #     _collect_includes
-            self._manifest_config = _data['config']
-            self._manifest_items = _data['items']
-            self._manifest_repos = _data['repos']
-            self._manifest_custom_scripts = _data['customScripts']
-            with open(os.path.join(self._manifest_config['snix_root'],'_snix','schema.json'), 'r') as schema:
-                _schema = json.load(schema)
-                Draft4Validator(_schema).validate(_data)
+        with open(os.path.join(_data['config']['snix_root'],'_snix','schema.json'), 'r') as schema:
+            _schema = json.load(schema)
+            Draft4Validator(_schema).validate(_data)
+        self._manifest_config = _data['config']
+
+        if 'includes' in _data:
+            self._collect_includes(_data)
+        if 'items' in _data:
+            map(lambda i:self._manifest_items.append(i), _data['items'])
+        if 'repos' in _data:
+            map(lambda i:self._manifest_repos.append(i), _data['repos'])
+        if 'customScripts' in _data:
+            map(lambda i:self._manifest_custom_scripts.append(i), _data['customScripts'])
+
+
+    def _collect_includes(self, _data):
+        _root = _data['config']['snix_root']
+        for include in _data['includes']:
+            _repo = include['upstreamRepo']
+            _dir = _repo.split('/')[-1].split('.')[0]
+            if not os.path.exists(_dir):
+                includeContext={}
+                includeContext['snix_root']= _root
+                includeContext['repo_location']= _repo
+                Repo(includeContext).clone()
+            grp_dir = include['pathRelativeToGroupManifestDir']
+            _include_file = os.path.join(_root, _dir, grp_dir,grp_dir+'.snix')
+        self._collect_from_file(_include_file)
+
+    def _collect_from_file(self, _include_file):
+        with open(_include_file, 'r') as candidate:
+            _data = json.load(candidate)
+        with open(os.path.join(self._manifest_config['snix_root'],'_snix','schema.json'), 'r') as schema:
+            _schema = json.load(schema)
+            Draft4Validator(_schema).validate(_data)
+        if 'include' in _data:
+            self._collect_includes(_data)
+        if 'items' in _data:
+            map(lambda i:self._manifest_items.append(i), _data['items'])
+        if 'repos' in _data:
+            map(lambda i:self._manifest_repos.append(i), _data['repos'])
+        if 'customScripts' in _data:
+            map(lambda i:self._manifest_custom_scripts.append(i), _data['customScripts'])
+        # self._manifest_items.udpate(_data['items'])
+        # self._manifest_repos.udpate(_data['repos'])
+        # self._manifest_custom_scripts.update(_data['customScripts'])
 
     def __str__(self):
         items = [''.join("{0} via {1}".format(item['names'], item['via'])) for item in iter(self._manifest_items)]
@@ -77,3 +119,5 @@ class Context:
             custom_script_context.update(self._manifest_config)
             all_scripts.append(Script(custom_script_context))
         return all_scripts
+
+

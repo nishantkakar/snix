@@ -7,6 +7,8 @@ import subprocess
 import sys
 from snixLogger import SnixLogger
 from contextlib import contextmanager
+from fcntl import fcntl, F_GETFL, F_SETFL
+from os import O_NONBLOCK, read
 
 logger = SnixLogger.logger()
 
@@ -17,17 +19,36 @@ def abort(msg):
 
 
 def execute(cmd, use_shell):
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=use_shell)
-    while True:
-        output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        else:
-            sys.stdout.write(output)
-            sys.stdout.flush()
+    p = subprocess.Popen(cmd, shell=use_shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    return process.poll()
-    #return process.communicate()
+    print("...")
+    out, err = p.communicate()
+    if out:
+        print(out)
+    if err:
+        print(err)
+
+    # while p.poll() is None:
+    #     out = p.stdout.read(1)
+    #     err = p.stderr.read(1)
+    #     if not out:
+    #         # print("hello")
+    #         sys.stdout.write(out)
+    #         sys.stdout.flush()
+    #     if not err:
+    #         sys.stdout.write(err)
+    #         sys.stdout.flush()
+
+    # while True:
+    #     output = p.stdout.readline()
+    #     if output == '' and p.poll() is not None:
+    #         break
+    #     else:
+    #         sys.stdout.write(output)
+    #         sys.stdout.flush()
+
+    return p.poll()
+
 
 @contextmanager
 def execute_in_dir_and_revert(target_dir):
