@@ -28,8 +28,8 @@ class Item:
         cmd, use_shell = CommandBuilder.build_install_cmd(self._context)
         logger.info(msg+cmd)
         ret = snixCore.execute(shlex.split(cmd), use_shell)
-        logger.info(msg+'StatusCode:'+str(ret))
-        logger.info(msg+'Done!')
+        #logger.info(msg+'StatusCode:'+str(ret))
+        logger.info(msg+'Done!. StatusCode:'+str(ret))
         # if out:
         #     logger.debug(out)
         # if err:

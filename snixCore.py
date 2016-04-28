@@ -19,15 +19,21 @@ def abort(msg):
 
 
 def execute(cmd, use_shell):
-    p = subprocess.Popen(cmd, shell=use_shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    print("...")
-    out, err = p.communicate()
-    if out:
-        print(out)
-    if err:
-        print(err)
-
+    # p = subprocess.Popen(cmd, shell=use_shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #
+    # print("...")
+    # out, err = p.communicate()
+    # if out:
+    #     print(out)
+    # if err:
+    #     print(err)
+    # return p.poll()
+    try:
+        subprocess.check_call(cmd, stdin=None,shell=use_shell)
+        return 0
+    except subprocess.CalledProcessError as e:
+        logger.error("{0} exited with error code {1}".format(' '.join(e.cmd), str(e.returncode)))
+        return e.returncode
     # while p.poll() is None:
     #     out = p.stdout.read(1)
     #     err = p.stderr.read(1)
@@ -47,7 +53,7 @@ def execute(cmd, use_shell):
     #         sys.stdout.write(output)
     #         sys.stdout.flush()
 
-    return p.poll()
+
 
 
 @contextmanager

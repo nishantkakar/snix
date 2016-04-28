@@ -20,10 +20,10 @@ class Script:
         script_path=os.path.join(self._context['snix_root'],self._context['script_location'])
         if not os.access(script_path, os.X_OK):
             abort(script_path+"is not executable!")
-        # with execute_in_dir_and_revert(self._context['snix_root']):
-        msg = "Executing {0}...".format(script_path)
-        logger.info(msg + script_path)
-        ret = execute(shlex.split(script_path), True)
-        logger.info(msg + 'StatusCode:' + str(ret))
-        logger.info(msg + 'Done!')
+        with execute_in_dir_and_revert(os.path.split(script_path)[0]):
+            msg = "Executing {0}...".format(script_path)
+            logger.info(msg + script_path)
+            ret = execute(shlex.split(script_path), True)
+            logger.info(msg + 'StatusCode:' + str(ret))
+            logger.info(msg + 'Done!')
 
