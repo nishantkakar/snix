@@ -1,13 +1,10 @@
 # snix
 Snix is intended to be a simple tool to setup your unix environment.
 
-S - comes from the word "setup"
+***S***etup u***nix***
 
-nix - comes from the word "Unix"
-
-Got a new laptop ?
-
-Just joined a team ?
+Got a new laptop ? Just joined the company or a team ?
+**snix can help!**
 
 ##Why
 Fundamentally, as computer science and software professionals, we strive find a better, faster solution to an existing problem.
