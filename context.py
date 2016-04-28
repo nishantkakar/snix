@@ -27,16 +27,17 @@ class Context:
     # TODO navigate all includes.
     # make sure it doesn' have cycles.
     def _construct(self):
-        with open(self._file, 'r') as candidate, open('schema.json', 'r') as schema:
+        with open(self._file, 'r') as candidate:
             _data = json.load(candidate)
             # if 'include' in _data:
             #     _collect_includes
-            _schema = json.load(schema)
-            Draft4Validator(_schema).validate(_data)
             self._manifest_config = _data['config']
             self._manifest_items = _data['items']
             self._manifest_repos = _data['repos']
             self._manifest_custom_scripts = _data['customScripts']
+            with open(os.path.join(self._manifest_config['snix_root'],'_snix','schema.json'), 'r') as schema:
+                _schema = json.load(schema)
+                Draft4Validator(_schema).validate(_data)
 
     def __str__(self):
         items = [''.join("{0} via {1}".format(item['names'], item['via'])) for item in iter(self._manifest_items)]

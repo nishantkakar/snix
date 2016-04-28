@@ -240,8 +240,8 @@ def _bootstrap():
     return _config
 
 
-def _write_user_config(config):
-    msg = 'Writing user config...'
+def _write_user_manifest(config):
+    msg = 'Writing user manifest...'
     my_manifest_repo = os.path.join(snix_config[KEY_SNIX_USER_MANIFEST_DIR], SYS_USER.replace('.', '_') + '_snix')
     _create_dir(msg, my_manifest_repo)
 
@@ -269,7 +269,7 @@ def _write_user_config(config):
                 abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
     else:
         if os.path.getsize(_manifest) == 0:
-            abort(_manifest+"is empty. Cannot upate")
+            abort(_manifest+"is empty. Cannot update")
         with open(_manifest, 'r+') as f:
             # TODO what if the file is empty.
 
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     raw_input("Press Enter...")
     _configure_git(snix_config[KEY_EMAIL])
     raw_input("Press Enter...")
-    _write_user_config(snix_config)
+    _write_user_manifest(snix_config)
 
     logger.info("-------->>We're now ready to install things.")
 
