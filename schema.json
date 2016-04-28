@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "root",
+  "definitions": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "via": {
+      "enum": [
+        "brew",
+        "brew-cask",
+        "dmg"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "include": {
+      "description": "Include files from another team/coworker/friend. Should be a git repo in github under the org",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties":{
+          "required":["path","upstreamRepo"],
+          "pathRelativeToGroupManifestDir": {
+            "type":"string"
+          },
+          "upstreamRepo":{
+            "type":"string"
+          }
+        }
+      }
+    },
+    "config": {
+      "description": "Properties that snix will use. Configs defined here will override conflicting includes.",
+      "type": "object"
+    },
+    "items": {
+      "description": "Items that will be installed by snix. Will be combined with those from the include files",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "required": [
+            "names",
+            "via"
+          ],
+          "names": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/definitions/name"
+            }
+          },
+          "via": {
+            "$ref": "#/definitions/via"
+          }
+        }
+      }
+    },
+    "repos":{
+      "type":"array",
+      "minItems":1,
+      "uniqueItems": true,
+      "items":{
+        "type":"string",
+        "minLength":1
+      }
+    },
+    "customScripts": {
+      "description": "Customizations that will be run by snix. Customizations will override conflicting includes.",
+      "type": "array",
+      "minItems":1,
+      "uniqueItems":true,
+      "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+  }
+}
+

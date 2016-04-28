@@ -3,6 +3,7 @@ import json
 import os
 import platform
 import re
+import shlex
 import subprocess
 import logging
 import socket
@@ -12,11 +13,11 @@ KEY_EMAIL = 'email'
 
 KEY_GITHUB_USER = 'github_user'
 
-HOME = os.environ['HOME']
-PATH = os.environ['PATH']
-USER = os.environ['USER']
+SYS_HOME = os.environ['HOME']
+SYS_PATH = os.environ['PATH']
+SYS_USER = os.environ['USER']
 
-DEFAULT_INSTALL_DIR_NAME = 'muley'
+DEFAULT_INSTALL_DIR_NAME = 'yaise'
 SNIX_CODE_DIR_NAME = '_snix'
 SNIX_GROUP_MANIFEST_DIR_NAME = '_grp_manifest'
 SNIX_USER_MANIFEST_DIR_NAME = '_user_manifest'
@@ -122,10 +123,14 @@ def setup_snix_in(snix_root):
     _create_dir(msg + "Creating a location to store your and perhaps other user's manifests.", user_manifest_dir)
     _config[KEY_SNIX_USER_MANIFEST_DIR] = user_manifest_dir
 
+    # TODO fix me: This obviously doesn't work. need the PATH modification to persist.
     logger.info(msg + "Adding %s to PATH" % snix_root)
-    os.environ['PATH'] += os.pathsep + snix_root
-
+    global SYS_PATH
+    SYS_PATH += os.pathsep + snix_root
+    logger.info(msg + "Path is:%s" % SYS_PATH)
     logger.info(msg + 'Done!')
+
+    #TODO : Add a soft link to snix binary.
 
     return _config
 
@@ -201,6 +206,14 @@ def _install_homebrew():
             logger.info(msg + out)
         if err:
             logger.info(msg + err)
+
+        process = subprocess.Popen(shlex.split("brew tap caskroom/cask"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        if out:
+            logger.info(msg + out)
+        if err:
+            logger.info(msg + err)
+
     except subprocess.CalledProcessError as e:
         abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
 
@@ -209,6 +222,7 @@ def _install_homebrew():
 
 def _bootstrap_darwin():
     _install_xcode_devtools()
+    raw_input("Press Enter...")
     _install_homebrew()
 
 
@@ -219,15 +233,16 @@ def _bootstrap():
     os_bootstrap = _get_bootstrap_for_this_os()
     os_bootstrap()
 
-    snix_dir = os.path.join(HOME, DEFAULT_INSTALL_DIR_NAME)
+    raw_input("Press Enter...")
+    snix_dir = os.path.join(SYS_HOME, DEFAULT_INSTALL_DIR_NAME)
     _config = setup_snix_in(snix_dir)
     logger.info(msg + 'Done!')
     return _config
 
 
-def _write_user_config(_config):
+def _write_user_config(config):
     msg = 'Writing user config...'
-    my_manifest_repo = os.path.join(snix_config[KEY_SNIX_USER_MANIFEST_DIR], USER.replace('.', '_') + '_snix')
+    my_manifest_repo = os.path.join(snix_config[KEY_SNIX_USER_MANIFEST_DIR], SYS_USER.replace('.', '_') + '_snix')
     _create_dir(msg, my_manifest_repo)
 
     my_manifest_repo_git = os.path.join(my_manifest_repo, '.git')
@@ -241,12 +256,11 @@ def _write_user_config(_config):
             abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
 
     _manifest = os.path.join(my_manifest_repo, MY_SNIX_FILE_NAME)
-    #if file exists. read config. modify it and warn with git diff on those two files.
     if not os.path.exists(_manifest):
         logger.info("Committing your first ever configuration to %s" % _manifest)
         with open(_manifest, 'w') as f:
             try:
-                json.dump({'config': _config}, f, indent=2, sort_keys=True)
+                json.dump({'config': config}, f, indent=2, sort_keys=True)
                 subprocess.check_call(
                             ['git', "--git-dir=%s" % my_manifest_repo_git, "--work-tree=%s" % my_manifest_repo, 'add', _manifest], stdin=None, shell=False)
                 subprocess.check_call(
@@ -254,19 +268,23 @@ def _write_user_config(_config):
             except subprocess.CalledProcessError as e:
                 abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
     else:
+        if os.path.getsize(_manifest) == 0:
+            abort(_manifest+"is empty. Cannot upate")
         with open(_manifest, 'r+') as f:
+            # TODO what if the file is empty.
+
             data = json.load(f)
             read_config = data['config']
-            if cmp(_config, read_config) != 0:
-                read_config.update(_config)
+            if cmp(config, read_config) != 0:
+                read_config.update(config)
                 json.dump({'config': read_config}, f, indent=2, sort_keys=True)
                 try:
                     subprocess.check_call(['git', "--git-dir=%s" % my_manifest_repo_git, "--work-tree=%s" % my_manifest_repo, 'diff'], stdin=None, shell=False)
                 except subprocess.CalledProcessError as e:
                     abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
 
-    _config[KEY_SNIX_MY_MANIFEST_DIR] = my_manifest_repo
-    return _config
+    config[KEY_SNIX_MY_MANIFEST_DIR] = my_manifest_repo
+    return config
 
 
 def _configure_git(email):
@@ -287,7 +305,7 @@ if __name__ == "__main__":
                 "\n ___ _ __ (_)_  __" +
                 "\n/ __| '_ \| \ \/ /" +
                 "\n\__ \ | | | |>  <" +
-                "\n|___/_| |_|_/_/\_\ \n")
+                "\n|___/_| |_|_/_/\_\.........Setup your *nix environment!\n")
 
     logger.info("-------->>Hi! there. Let's get started!")
 
@@ -309,26 +327,27 @@ if __name__ == "__main__":
 
     snix_config = {KEY_GITHUB_USER: args.github_user, KEY_EMAIL: args.email}
     snix_config.update(_bootstrap())  # Runs the bootstrap and updates the config.
+    raw_input("Press Enter...")
     _configure_git(snix_config[KEY_EMAIL])
+    raw_input("Press Enter...")
     _write_user_config(snix_config)
 
     logger.info("-------->>We're now ready to install things.")
 
     my_snix_manifest = os.path.join(snix_config[KEY_SNIX_MY_MANIFEST_DIR], MY_SNIX_FILE_NAME)
 
-    while True:
-        choice = raw_input("Proceed with installation(yes/no)?[yes]").lower() or 'yes'
-        if choice in ['no', 'n']:
-            logger.info("You can start installation by Running 'snix %s'" % my_snix_manifest)
-            break
-        elif choice in ['yes', 'y']:
-            logger.info("Running 'snix %s" % my_snix_manifest)
-            break
+    logger.info("Please review {0} and start installation by running the following command \n'snix run {0}'".format(my_snix_manifest))
+    # while True:
+    #     choice = raw_input("Proceed with installation(yes/no)?[yes]").lower() or 'yes'
+    #     if choice in ['no', 'n']:
+    #
+    #         break
+    #     elif choice in ['yes', 'y']:
+    #         logger.info("Running 'snix %s" % my_snix_manifest)
+    #         break
 
     logger.info("-------->>Done!")
-
-    #TODO: extract all the subprocess stuff into a method.
-    #TODO: validate email address.
-    #TODO: colored logs
-    #TODO: intial path of most configs is similar. see if you can build a json ref. 
+    # TODO: extract all the subprocess stuff into a method.
+    # TODO: validate email address.
+    # TODO: path is not working. make sure it's also what is outpu at the end of th script.
 

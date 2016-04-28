@@ -4,21 +4,42 @@ import os
 import zipfile
 import subprocess
 
+import sys
+from snixLogger import SnixLogger
+from contextlib import contextmanager
 
-# NOTE: Do not use the logger here as it will result in a cyclic import 'cos of the Singleton.
-#  Maybe it needs to be it's own little thing.
-class Singleton(type):
-    instance = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls.instance is None:
-            cls.instance = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls.instance
+logger = SnixLogger.logger()
 
 
-def executeCommand(cmd, executeInShell):
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=executeInShell)
-    return process.communicate()
+def abort(msg):
+    logger.error(" -Aborting!- %s" % msg)
+    sys.exit(1)
+
+
+def execute(cmd, use_shell):
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=use_shell)
+    while True:
+        output = process.stdout.readline()
+        if output == '' and process.poll() is not None:
+            break
+        else:
+            sys.stdout.write(output)
+            sys.stdout.flush()
+
+    return process.poll()
+
+
+@contextmanager
+def execute_in_dir_and_revert(target_dir):
+    original_dir = os.getcwd()
+    try:
+        logger.info("Switching to directory...{0}".format(target_dir))
+        os.chdir(target_dir)
+        yield
+    finally:
+        logger.info("Reverting back to directory...{0}".format(original_dir))
+        os.chdir(original_dir)
+
 
 
 # TODO validate url and destination. Might be a good method to start unit testing

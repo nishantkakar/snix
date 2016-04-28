@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
-import manifestParser
+from context import Context
 import os
 import logging
-import snixLogger
 
-logger = snixLogger.SnixLogger.logger()
+import snixCore
+from snixLogger import SnixLogger
+
+logger = SnixLogger.logger()
 
 
 class Snix:
@@ -14,52 +16,88 @@ class Snix:
 
     def __init__(self):
         self.cliParser = argparse.ArgumentParser()
-        self.manifest = manifestParser.Manifest.parse()
-        self.buildCLIParser(self.cliParser)
+        self.configure_parser(self.cliParser)
 
     # TODO: shouldn't have to call this everytime.
-    # TODO : Could build this parser based on a File as well.
     # TODO : how do I document each action
-    def buildCLIParser(self, cliParser):
-        cliParser.add_argument("action", help="An action that snix can perform.", choices=['init', 'install'])
+    def configure_parser(self, cliParser):
+        cliParser.add_argument("action", choices=['init', 'test', 'run'], help="An action that snix can perform.")
         cliParser.add_argument("argument", help="Additional argument for a specified action", nargs='?')
 
-    def execute(self):
+    def go(self):
         args = self.cliParser.parse_args()
         action = {
             "init": self.init,
-            "install": self.install,
+            "test": self.test,
+            "run": self.run,
         }.get(args.action)
         if args.argument:
-            self.perform(action, args.argument)
+            self._perform(action, args.argument)
         else:
-            self.perform(action)
+            self._perform(action)
+        logger.info("-------->>and we're done! Happy Coding!")
 
-    def perform(self, action, *args):
+    def _perform(self, action, *args):
+        logger.info("Performing Command : {0} with arguments: {1}".format(action.__name__, args))
         action(*args)
 
     def init(self):
         """The init command for snix. Sets up the required directories and tools required for Snix to work."""
-        self.__createDir(self.manifest.getConfigurationValue("workingDir"))
-        self.__createDir(self.manifest.getConfigurationValue("rcDir"))
-        self.manifest.getItem("homebrew").install()
+        pass
+        # self.__createDir(self.manifest.getConfigurationValue("workingDir"))
+        # self.__createDir(self.manifest.getConfigurationValue("rcDir"))
+        # self.manifest.getItem("homebrew").install()
 
-    def __createDir(self, path):
-        dir = os.path.dirname(path)
-        if not os.path.exists(dir):
-            logger.info("Creating %s." % dir)
-            os.makedirs(dir)
-        else:
-            logger.info("%s already exists." % dir)
+    # def __createDir(self, path):
+    #     dir = os.path.dirname(path)
+    #     if not os.path.exists(dir):
+    #         logger.info("Creating %s." % dir)
+    #         os.makedirs(dir)
+    #     else:
+    #         logger.info("%s already exists." % dir)
 
-    def install(self, name):
-        """The install command will install an item from the manifest."""
-        if name == "all":
-            items = self.manifest.getItems()
+    def _execute(self, manifest_file, test):
+        context = Context.construct_from(manifest_file)
+        #parse and validate manifest. parse and validate all includes recursively
+        #Build an execution context.
+        # 1 Install s/w
+        # 2 Clone repos
+        # 3 Run customizations
+        if test:
+            logger.info('Test Run Requested. Here\'s what will be executed. ')
+            logger.info(context)
         else:
-            self.manifest.getItem(name).install()
+            self._install_items(context)
+            self._clone_repos(context)
+            self._execute_custom_scripts(context)
+
+    def _install_items(self, context):
+        for item in context.get_items():
+            item.install()
+            raw_input("Press Enter...")
+
+    def _clone_repos(self, context):
+        for repo in context.get_repos():
+            repo.clone()
+            raw_input("Press Enter...")
+
+    def _execute_custom_scripts(self, context):
+        for script in context.get_custom_scripts():
+            script.execute()
+            raw_input("Press Enter...")
+
+    def test(self, manifest_file):
+        """Parse the manifest, Validate it and show what you'll do i.e. dry run only"""
+        return self._execute(manifest_file, True)
+
+    def run(self, manifest_file):
+        """Parse the manifest, Validate it and execute the manifest"""
+        return self._execute(manifest_file, False)
 
 
 if __name__ == "__main__":
     snix = Snix()
-    snix.execute()
+    snix.go()
+
+# TODO tab completion.
+# TODO brew installer isn't dumping warning output.
