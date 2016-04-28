@@ -270,18 +270,20 @@ def _write_user_manifest(config):
     else:
         if os.path.getsize(_manifest) == 0:
             abort(_manifest+"is empty. Cannot update")
-        with open(_manifest, 'r+') as f:
+        with open(_manifest, 'r') as f:
             # TODO what if the file is empty.
 
             data = json.load(f)
             read_config = data['config']
-            if cmp(config, read_config) != 0:
-                read_config.update(config)
-                json.dump({'config': read_config}, f, indent=2, sort_keys=True)
-                try:
-                    subprocess.check_call(['git', "--git-dir=%s" % my_manifest_repo_git, "--work-tree=%s" % my_manifest_repo, 'diff'], stdin=None, shell=False)
-                except subprocess.CalledProcessError as e:
-                    abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
+
+        if cmp(config, read_config) != 0:
+            read_config.update(config)
+            with open(_manifest, 'w') as f:
+                json.dump(data, f, indent=2, sort_keys=True)
+            try:
+                subprocess.check_call(['git', "--git-dir=%s" % my_manifest_repo_git, "--work-tree=%s" % my_manifest_repo, 'diff'], stdin=None, shell=False)
+            except subprocess.CalledProcessError as e:
+                abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
 
     config[KEY_SNIX_MY_MANIFEST_DIR] = my_manifest_repo
     return config

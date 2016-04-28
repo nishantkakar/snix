@@ -35,7 +35,6 @@ class Snix:
             self._perform(action, args.argument)
         else:
             self._perform(action)
-        logger.info("-------->>and we're done! Happy Coding!")
 
     def _perform(self, action, *args):
         logger.info("Performing Command : {0} with arguments: {1}".format(action.__name__, args))
@@ -70,6 +69,7 @@ class Snix:
             self._install_items(context)
             self._clone_repos(context)
             self._execute_custom_scripts(context)
+            logger.info("-------->>and we're done! Happy Coding!")
 
     def _install_items(self, context):
         for item in context.get_items():
@@ -101,3 +101,4 @@ if __name__ == "__main__":
 
 # TODO tab completion.
 # TODO brew installer isn't dumping warning output.
+# TODO clean up the warnings.

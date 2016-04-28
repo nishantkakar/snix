@@ -27,7 +27,7 @@ def execute(cmd, use_shell):
             sys.stdout.flush()
 
     return process.poll()
-
+    #return process.communicate()
 
 @contextmanager
 def execute_in_dir_and_revert(target_dir):
