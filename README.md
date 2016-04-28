@@ -25,7 +25,7 @@ Based on a simple DSL defined in JSON.
 
 Bootstrap.
 
-Defined your manifest. You can also include your colleague/friend's manifest or a group manifest.
+Define your manifest. You can also include your colleague/friend's manifest or a group manifest.
 
 Run
 
