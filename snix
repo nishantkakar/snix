@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 
 import argparse
-from context import Context
+import shlex
+
+import subprocess
+
+from command import Command
+from snixContext import snixContext
+from snixCore import abort
 
 from snixLogger import SnixLogger
 
@@ -34,12 +40,29 @@ class Snix:
             self._perform(action)
 
     def _perform(self, action, *args):
-        logger.info("Performing Command : {0} with arguments: {1}".format(action.__name__, args))
+        logger.info("`snix {0}` with args: {1}".format(action.__name__, args))
         action(*args)
 
-    def init(self):
-        """The init command for snix. Sets up the required directories and tools required for Snix to work."""
-        pass
+    def _install_homebrew(self, init_dir):
+        msg = "Homebrew..."
+
+        logger.info(msg + 'Installing')
+        try:
+            install_cmd = 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
+            Command({'command': install_cmd, 'command_exec_dir': init_dir}, True).execute()
+
+            cask_cmd = "brew tap caskroom/cask"
+            Command({'command': shlex.split(cask_cmd), 'command_exec_dir': init_dir}).execute()
+
+        except subprocess.CalledProcessError as e:
+            abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
+
+        logger.info(msg + 'Done!')
+
+
+
+        #
+
         # self.__createDir(self.manifest.getConfigurationValue("workingDir"))
         # self.__createDir(self.manifest.getConfigurationValue("rcDir"))
         # self.manifest.getItem("homebrew").install()
@@ -53,19 +76,19 @@ class Snix:
     #         logger.info("%s already exists." % dir)
 
     def _execute(self, manifest_file, test):
-        context = Context.construct_from(manifest_file)
+        snix_context = snixContext.construct_from(manifest_file)
         #parse and validate manifest. parse and validate all includes recursively
-        #Build an execution context.
+        #Build an execution snix_context.
         # 1 Install s/w
         # 2 Clone repos
         # 3 Run customizations
         if test:
             logger.info('Test Run Requested. Here\'s what will be executed. ')
-            logger.info(context)
+            logger.info(snix_context)
         else:
-            self._install_items(context)
-            self._clone_repos(context)
-            self._execute_custom_scripts(context)
+            self._install_items(snix_context)
+            self._clone_repos(snix_context)
+            self._execute_custom_scripts(snix_context)
             logger.info("-------->>and we're done! Happy Coding!")
 
     def _install_items(self, context):
@@ -91,6 +114,10 @@ class Snix:
         """Parse the manifest, Validate it and execute the manifest"""
         return self._execute(manifest_file, False)
 
+    def init(self, init_dir):
+        """Initializes snix. Sets up the required directories and tools required for Snix to work."""
+        self._install_homebrew(init_dir)
+        # intialize git. conigure user name . configure email
 
 if __name__ == "__main__":
     snix = Snix()
@@ -99,3 +126,5 @@ if __name__ == "__main__":
 # TODO tab completion.
 # TODO brew installer isn't dumping warning output.
 # TODO clean up the warnings.
+# TODO init should complain if bootstrap hasn't already run.
+# TODO complain if commands that take an argument don't get one. Right now it just fails.

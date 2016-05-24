@@ -222,19 +222,17 @@ def _install_homebrew():
 
 def _bootstrap_darwin():
     _install_xcode_devtools()
-    raw_input("Press Enter...")
     _install_homebrew()
 
 
-def _bootstrap():
+def _bootstrap_in(_dir):
     msg = "Bootstrapping..."
     logger.info(msg)
 
     os_bootstrap = _get_bootstrap_for_this_os()
     os_bootstrap()
 
-    raw_input("Press Enter...")
-    snix_dir = os.path.join(SYS_HOME, DEFAULT_INSTALL_DIR_NAME)
+    snix_dir = os.path.join(SYS_HOME, _dir)
     _config = setup_snix_in(snix_dir)
     logger.info(msg + 'Done!')
     return _config
@@ -328,17 +326,15 @@ if __name__ == "__main__":
         args.email = raw_input('Please enter your email address:')
 
     snix_config = {KEY_GITHUB_USER: args.github_user, KEY_EMAIL: args.email}
-    snix_config.update(_bootstrap())  # Runs the bootstrap and updates the config.
-    raw_input("Press Enter...")
+    snix_config.update(_bootstrap_in(args.install_dir_name))  # Runs the bootstrap and updates the config.
     _configure_git(snix_config[KEY_EMAIL])
-    raw_input("Press Enter...")
     _write_user_manifest(snix_config)
 
     logger.info("-------->>We're now ready to install things.")
 
     my_snix_manifest = os.path.join(snix_config[KEY_SNIX_MY_MANIFEST_DIR], MY_SNIX_FILE_NAME)
 
-    logger.info("Please review {0} and start installation by running the following command \n'snix run {0}'".format(my_snix_manifest))
+    #logger.info("Please review {0} and start installation by running the following command \n'snix run {0}'".format(my_snix_manifest))
     # while True:
     #     choice = raw_input("Proceed with installation(yes/no)?[yes]").lower() or 'yes'
     #     if choice in ['no', 'n']:

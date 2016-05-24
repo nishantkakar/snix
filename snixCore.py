@@ -28,12 +28,17 @@ def execute(cmd, use_shell):
     # if err:
     #     print(err)
     # return p.poll()
+    msg = "Execute..."
+    logger.info(msg + "` {0} ` in {1}".format(' '.join(cmd) if type(cmd) is list else cmd, os.getcwd()))
     try:
         subprocess.check_call(cmd, stdin=None,shell=use_shell)
-        return 0
+        ret = 0
     except subprocess.CalledProcessError as e:
-        logger.error("{0} exited with error code {1}".format(' '.join(e.cmd), str(e.returncode)))
-        return e.returncode
+        logger.warn("{0} exited with error code {1}".format(e.cmd, str(e.returncode)))
+        ret = e.returncode
+
+    logger.info(msg+"StatusCode:{0}...Done!".format(ret))
+    return ret
     # while p.poll() is None:
     #     out = p.stdout.read(1)
     #     err = p.stderr.read(1)
@@ -54,8 +59,6 @@ def execute(cmd, use_shell):
     #         sys.stdout.flush()
 
 
-
-
 @contextmanager
 def execute_in_dir_and_revert(target_dir):
     original_dir = os.getcwd()
@@ -66,7 +69,6 @@ def execute_in_dir_and_revert(target_dir):
     finally:
         logger.info("Reverting back to directory...{0}".format(original_dir))
         os.chdir(original_dir)
-
 
 
 # TODO validate url and destination. Might be a good method to start unit testing

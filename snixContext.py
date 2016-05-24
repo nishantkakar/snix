@@ -9,16 +9,15 @@ from repo import Repo
 from script import Script
 
 
-
-class Context:
+class snixContext:
     """A parser that will build an in-memory representation of a snix manifest."""
     __metaclass__ = singleton.Singleton
 
     @staticmethod
     def construct_from(manifest_file):
-        context = Context(manifest_file)
-        context._construct()
-        return context
+        sc = snixContext(manifest_file)
+        sc._construct()
+        return sc
 
     def __init__(self, _file):
         if not os.path.isfile(_file):
