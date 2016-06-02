@@ -94,17 +94,14 @@ class Snix:
     def _install_items(self, context):
         for item in context.get_items():
             item.install()
-            raw_input("Press Enter...")
 
     def _clone_repos(self, context):
         for repo in context.get_repos():
             repo.clone()
-            raw_input("Press Enter...")
 
     def _execute_custom_scripts(self, context):
         for script in context.get_custom_scripts():
             script.execute()
-            raw_input("Press Enter...")
 
     def test(self, manifest_file):
         """Parse the manifest, Validate it and show what you'll do i.e. dry run only"""
