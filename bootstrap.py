@@ -17,7 +17,7 @@ SYS_HOME = os.environ['HOME']
 SYS_PATH = os.environ['PATH']
 SYS_USER = os.environ['USER']
 
-DEFAULT_INSTALL_DIR_NAME = 'yaise'
+DEFAULT_INSTALL_DIR_NAME = 'lab'
 SNIX_CODE_DIR_NAME = '_snix'
 SNIX_GROUP_MANIFEST_DIR_NAME = '_grp_manifest'
 SNIX_USER_MANIFEST_DIR_NAME = '_user_manifest'
@@ -43,7 +43,7 @@ def abort(msg):
 def network_up():
     """Checks if the network is up. Returns a tuple(True/False, message)"""
     # noinspection PyBroadException
-    msg = "Checking network..."
+    msg = "Network..."
     try:
         host = socket.gethostbyname("www.google.com")
         socket.create_connection((host, 80), 2)
@@ -301,11 +301,11 @@ def _configure_git(email):
 
 
 if __name__ == "__main__":
-    logger.info("\n           _      " +
-                "\n ___ _ __ (_)_  __" +
-                "\n/ __| '_ \| \ \/ /" +
-                "\n\__ \ | | | |>  <" +
-                "\n|___/_| |_|_/_/\_\.........Setup your *nix environment!\n")
+    print("           _      \n" +
+          " ___ _ __ (_)_  __\n" +
+          "/ __| '_ \| \ \/ /\n" +
+          "\__ \ | | | |>  <\n" +
+          "|___/_| |_|_/_/\_\.........Setup your *nix environment!\n")
 
     logger.info("-------->>Hi! there. Let's get started!")
 
