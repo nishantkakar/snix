@@ -7,8 +7,6 @@ import subprocess
 import sys
 from snixLogger import SnixLogger
 from contextlib import contextmanager
-from fcntl import fcntl, F_GETFL, F_SETFL
-from os import O_NONBLOCK, read
 
 logger = SnixLogger.logger()
 

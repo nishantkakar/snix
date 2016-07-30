@@ -4,7 +4,6 @@ import logging
 from singleton import Singleton
 
 
-
 class ColorizedStreamHandler(logging.StreamHandler):
     color_map = {
         'red': 1,
