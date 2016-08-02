@@ -9,27 +9,12 @@ import logging
 import socket
 import sys
 
-# KEY_EMAIL = 'email'
-# KEY_GITHUB_USER = 'github_user'
-
 SYS_HOME = os.environ['HOME']
-# SYS_PATH = os.environ['PATH']
-# SYS_USER = os.environ['USER']
 
 DEFAULT_INSTALL_DIR = os.path.join(SYS_HOME, 'lab')
 SNIX_EXECUTABLE = 'snix'
 SNIX_CODE_DIR = '_' + SNIX_EXECUTABLE
 SNIX_CONF_FILE = SNIX_EXECUTABLE + os.extsep + "conf"
-# SNIX_GROUP_MANIFEST_DIR_NAME = '_grp_manifest'
-# SNIX_USER_MANIFEST_DIR_NAME = '_user_manifest'
-# SNIX_RC_DIR_NAME = 'rc'
-#
-# MY_SNIX_FILE_NAME = 'my.snix'
-#
-# KEY_SNIX_MY_MANIFEST_DIR = 'snix_my_manifest_dir'
-# KEY_SNIX_USER_MANIFEST_DIR = 'snix_user_manifest_dir'
-# KEY_SNIX_GROUP_MANIFEST_DIR = 'snix_group_manifest_dir'
-# KEY_SNIX_RC_DIR = 'snix_rc_dir'
 KEY_SNIX_HOME = 'snix.home'
 
 logger = logging.getLogger(__name__)

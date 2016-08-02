@@ -17,18 +17,11 @@ logger = SnixLogger.logger()
 class Snix:
     """The Actual Snix CLI command. Type snix --help for more information"""
 
-    def __init__(self):
-        self._cliParser = argparse.ArgumentParser()
-        self._configure_parser()
-
-    # TODO: shouldn't have to call this everytime.
-    # TODO : how do I document each action
-    def _configure_parser(self):
-        self._cliParser.add_argument("action", choices=['init', 'test', 'run'], help="An action that snix can perform.")
-        self._cliParser.add_argument("argument", help="Additional argument for a specified action", nargs='?')
+    def __init__(self, args):
+        self._args = args
 
     def go(self):
-        args = self._cliParser.parse_args()
+        args = self._args
         action = {
             "init": self.init,
             "test": self.test,
@@ -135,10 +128,11 @@ if __name__ == "__main__":
     cliParser = argparse.ArgumentParser()
     cliParser.add_argument("action", choices=['init', 'test', 'run'], help="An action that snix can perform.")
     cliParser.add_argument("argument", help="Additional argument for a specified action", nargs='?')
+    args = cliParser.parse_args()
 
 # TODO: shouldn't have to call this everytime.
 # TODO : how do I document each action
-    snix = Snix()
+    snix = Snix(args)
     snix.go()
 
 # TODO tab completion.
