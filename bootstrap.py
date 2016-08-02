@@ -3,7 +3,6 @@ import argparse
 import os
 import platform
 import re
-import shlex
 import subprocess
 import logging
 import socket
@@ -14,7 +13,8 @@ SYS_HOME = os.environ['HOME']
 DEFAULT_INSTALL_DIR = os.path.join(SYS_HOME, 'lab')
 SNIX_EXECUTABLE = 'snix'
 SNIX_CODE_DIR = '_' + SNIX_EXECUTABLE
-SNIX_CONF_FILE = SNIX_EXECUTABLE + os.extsep + "conf"
+SNIX_CONF_FILE = os.path.join(os.sep, "usr", "local", "etc", SNIX_EXECUTABLE + os.extsep + "conf")
+
 KEY_SNIX_HOME = 'snix.home'
 
 logger = logging.getLogger(__name__)
@@ -26,14 +26,14 @@ def abort(msg):
     sys.exit(1)
 
 
+# noinspection PyBroadException
 def network_up():
     """Checks if the network is up. Returns a tuple(True/False, message)"""
-    # noinspection PyBroadException
-    msg = "Network..."
+    msg = "Network is "
     try:
         host = socket.gethostbyname("www.google.com")
         socket.create_connection((host, 80), 2)
-        return True, msg + 'UP!'
+        return True, msg + 'Up.'
     except:
         pass
     return False, msg + 'DOWN!'
@@ -58,12 +58,13 @@ def precondition(pre):
 
 
 @precondition(network_up)
-def _clone_repo_into(msg, snix_root):
+def clone_repo_into(_dir):
     """Clones the snix source code git repo"""
-    if not os.path.exists(snix_root):
-        abort("%s does not exist!" % msg)
+    _msg = "Cloning snix source code repo."
+    if not os.path.exists(_dir):
+        abort("%s does not exist!" % _msg)
 
-    snix_repo = os.path.join(snix_root, SNIX_CODE_DIR)
+    snix_repo = os.path.join(_dir, SNIX_CODE_DIR)
     snix_repo_git = os.path.join(snix_repo, '.git')
 
     if not os.path.exists(snix_repo):
@@ -71,44 +72,25 @@ def _clone_repo_into(msg, snix_root):
             subprocess.check_call(['git', 'clone', "https://github.com/yaise/snix.git", snix_repo], stdin=None,
                                   shell=False)
         except subprocess.CalledProcessError as e:
-            abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
+            abort(_msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
     else:
         if os.path.exists(snix_repo_git):
-            logger.info(msg + "Found %s! Will update." % snix_repo)
+            logger.info(_msg + "Found %s! Will update." % snix_repo)
             try:
                 subprocess.check_call(['git', "--git-dir=%s" % snix_repo_git, "--work-tree=%s" % snix_repo, 'pull'],
                                       stdin=None, shell=False)
             except subprocess.CalledProcessError as e:
-                abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
+                abort(_msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
             return
         else:
-            logger.info(msg + "Directory exists but no repository found. Deleting %s" % snix_repo)
+            logger.info(_msg + "Directory exists but no repository found. Deleting %s" % snix_repo)
             os.rmdir(snix_repo)
 
-    logger.info(msg + 'Done!')
-
-
-# def setup_snix_in(snix_root):
-#     """Sets up the directory structure for snix."""
-#     msg = "Snix setup..."
-#     _clone_repo_into(msg + "Cloning snix source code repo.", snix_root)
-
-# snix_rc_dir = os.path.join(snix_root, SNIX_RC_DIR_NAME)
-# _create_dir(snix_rc_dir)
-# _config[KEY_SNIX_RC_DIR] = snix_rc_dir
-
-# group_manifest_dir = os.path.join(snix_root, SNIX_GROUP_MANIFEST_DIR_NAME)
-# _create_dir(group_manifest_dir)
-# _config[KEY_SNIX_GROUP_MANIFEST_DIR] = group_manifest_dir
-
-# user_manifest_dir = os.path.join(snix_root, SNIX_USER_MANIFEST_DIR_NAME)
-# _create_dir(user_manifest_dir)
-# _config[KEY_SNIX_USER_MANIFEST_DIR] = user_manifest_dir
-# return _config
+    logger.info(_msg + 'Done!')
 
 
 @precondition(network_up)
-def _install_xcode_devtools():
+def install_xcode_devtools():
     """" Installs Xcode developer tools without any UI intervention.
     Credit:
     github.com/timsutton/osx-vm-templates/blob/ce8df8a7468faa7c5312444ece1b977c1b2f77a4/scripts/xcode-cli-tools.sh """
@@ -149,49 +131,12 @@ def _install_xcode_devtools():
     except subprocess.CalledProcessError as e:
         abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
 
-    logger.info(msg + 'Done!')
+
+def bootstrap_darwin():
+    install_xcode_devtools()
 
 
-@precondition(network_up)
-def _install_homebrew():
-    msg = "Homebrew..."
-
-    logger.info(msg + 'Installing')
-    try:
-        cmd = 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        out, err = process.communicate()
-        if out:
-            logger.info(msg + out)
-        if err:
-            logger.info(msg + err)
-
-        process = subprocess.Popen(shlex.split("brew tap caskroom/cask"), stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-        out, err = process.communicate()
-        if out:
-            logger.info(msg + out)
-        if err:
-            logger.info(msg + err)
-
-    except subprocess.CalledProcessError as e:
-        abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
-
-    logger.info(msg + 'Done!')
-
-
-def _bootstrap_darwin():
-    _install_xcode_devtools()
-    # _install_homebrew()
-
-
-def _get_bootstrap_for_this_os():
-    return {
-        'Darwin': _bootstrap_darwin
-    }.get(platform.system())
-
-
-def _create_dir(_dir):
+def create_dir(_dir):
     if not os.path.exists(_dir):
         logger.info("Creating dir:" + _dir)
         os.mkdir(_dir)
@@ -201,17 +146,20 @@ def _create_dir(_dir):
             abort("%s permissions should be rwx or 777")
 
 
-def _bootstrap_in(_dir):
-    msg = "Bootstrapping..."
-    logger.info(msg)
-    _create_dir(_dir)
+def bootstrap_in(_dir):
+    def _get_bootstrap_for_this_os():
+        return {
+            'Darwin': bootstrap_darwin
+        }.get(platform.system())
+
+    create_dir(_dir)
 
     os_bootstrap = _get_bootstrap_for_this_os()
     os_bootstrap()
 
-    _clone_repo_into(msg + "Cloning snix source code repo.", _dir)
+    clone_repo_into(_dir)
 
-    logger.info(msg + 'Done!')
+    logger.info("Bootstrapping...Done!")
     return _dir
 
 
@@ -268,17 +216,26 @@ def _bootstrap_in(_dir):
 #     return config
 
 
-def _configure_git(email):
-    msg = "Configuring git..."
-    try:
-        subprocess.check_call(
-            ['git', 'config', '--global', 'user.email', email], stdin=None, shell=False)
-        output = subprocess.check_output(['git', 'config', '--get', 'user.email', email], stdin=None, shell=False)
-        logger.info(msg + "Set global user email to:%s" % output)
-    except subprocess.CalledProcessError as e:
-        abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
+def add_snix_to_path(_snix_home):
+    _snix_executable = os.path.join(_snix_home, SNIX_CODE_DIR, SNIX_EXECUTABLE)
+    _usr_local_bin_snix = os.path.join(os.sep, "usr", "local", "bin", SNIX_EXECUTABLE)
+    if not os.path.islink(_usr_local_bin_snix):
+        logger.info("Adding {src} to path({dst})".format(src=_snix_executable, dst=_usr_local_bin_snix))
+        os.symlink(_snix_executable, _usr_local_bin_snix)
+    else:
+        logger.info("{src} already exists in path({dst})".format(src=_snix_executable, dst=_usr_local_bin_snix))
+    logger.info("Configuring Path...Done!")
 
-    logger.info(msg + 'Done!')
+
+def write_snix_config(_snix_home):
+    _config = ConfigParser.RawConfigParser()
+    _config.add_section("config")
+    _config.set("config", KEY_SNIX_HOME, _snix_home)
+    _snix_conf_file_path = os.path.join(os.sep, "usr", "local", "etc", SNIX_CONF_FILE)
+    with open(_snix_conf_file_path, 'wb') as f:
+        _config.write(f)
+    logger.info("Snix configuration written in %s" % _snix_conf_file_path)
+    logger.info("Writing config file...Done!")
 
 
 if __name__ == "__main__":
@@ -290,44 +247,22 @@ if __name__ == "__main__":
 
     logger.info("-------->>Hi! there. Let's get started!")
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--install_dir_name',
-                        help="Name for the installation directory ($HOME/<install_dir_name>) "
-                             "which will hold your code and configs")
-    args = parser.parse_args()
-    if not args.install_dir_name:
-        args.install_dir_name = raw_input(
+    _parser = argparse.ArgumentParser()
+    _parser.add_argument('-i', '--install_dir_name',
+                         help="Name for the installation directory ($HOME/<install_dir_name>) "
+                              "which will hold your code and configs")
+    _args = _parser.parse_args()
+    if not _args.install_dir_name:
+        _args.install_dir_name = raw_input(
             "Give me a directory to set stuff up in. Press Enter to accept the default[%s]:"
             % DEFAULT_INSTALL_DIR) or DEFAULT_INSTALL_DIR
 
-    # gotta check if that directory is read writable and executable.
-    # if not args.github_user:
-    #     args.github_user = raw_input('Please enter your github username:')
-    # if not args.email:
-    #     args.email = raw_input('Please enter your email address:')
+    snix_home = bootstrap_in(_args.install_dir_name)
 
-    # snix_config = {KEY_GITHUB_USER: args.github_user, KEY_EMAIL: args.email}
-    _snixHome = _bootstrap_in(args.install_dir_name)
-    # snix_config.update(_install_location)  # Runs the bootstrap and updates the config.
-    # _configure_git(snix_config[KEY_EMAIL])
-    # _write_user_manifest(snix_config)
+    add_snix_to_path(snix_home)
 
-    _snixExecutable = os.path.join(_snixHome, SNIX_CODE_DIR, SNIX_EXECUTABLE)
-    _usrLocalBinSnix = os.path.join(os.sep, "usr", "local", "bin", SNIX_EXECUTABLE)
-    if not os.path.islink(_usrLocalBinSnix):
-        logger.info("Adding {src} to path({dst})".format(src=_snixExecutable, dst=_usrLocalBinSnix))
-        os.symlink(_snixExecutable, _usrLocalBinSnix)
-    else:
-        logger.info("{src} already exists in path({dst})".format(src=_snixExecutable, dst=_usrLocalBinSnix))
-
-    _config = ConfigParser.RawConfigParser()
-    _config.add_section("config")
-    _config.set("config", KEY_SNIX_HOME, _snixHome)
-    snixConfFilePath = os.path.join(os.sep, "usr", "local", "etc", SNIX_CONF_FILE)
-    with open(snixConfFilePath, 'wb') as f:
-        _config.write(f)
-    logger.info("Snix configuration written in %s" % snixConfFilePath)
+    write_snix_config(snix_home)
 
     logger.info("-------->>We're now ready to initialize snix.")
     logger.info("Please run the following command : snix init")
-    logger.info("-------->>Done! Thanks for Snix-ing! ")
+    logger.info("-------->>Thanks for Snix-ing! ")

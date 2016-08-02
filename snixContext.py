@@ -29,7 +29,7 @@ class snixContext:
         self._manifest_custom_scripts = []
 
     # TODO navigate all includes.
-    # make sure it doesn' have cycles.
+    # make sure it doesn't have cycles.
     def _construct(self):
         with open(self._file, 'r') as candidate:
             _data = json.load(candidate)
@@ -76,9 +76,6 @@ class snixContext:
             map(lambda i:self._manifest_repos.append(i), _data['repos'])
         if 'customScripts' in _data:
             map(lambda i:self._manifest_custom_scripts.append(i), _data['customScripts'])
-        # self._manifest_items.udpate(_data['items'])
-        # self._manifest_repos.udpate(_data['repos'])
-        # self._manifest_custom_scripts.update(_data['customScripts'])
 
     def __str__(self):
         items = [''.join("{0} via {1}".format(item['names'], item['via'])) for item in iter(self._manifest_items)]
@@ -96,9 +93,6 @@ class snixContext:
 
         all_items = []
         for item in self._manifest_items:
-            # if 'name' in item:
-            #     all_items.append(_build_item(item['name'], item['via'], self._manifest_config))
-            # elif 'names' in item:
             for name in item['names']:
                 all_items.append(_build_item(name, item['via'], self._manifest_config))
         return all_items

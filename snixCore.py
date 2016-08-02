@@ -16,6 +16,15 @@ def abort(msg):
     sys.exit(1)
 
 
+def create_dir(path):
+    dir = os.path.dirname(path)
+    if not os.path.exists(dir):
+        logger.info("Creating %s." % dir)
+        os.makedirs(dir)
+    else:
+        logger.info("%s already exists." % dir)
+
+
 def execute(cmd, use_shell):
     # p = subprocess.Popen(cmd, shell=use_shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     #

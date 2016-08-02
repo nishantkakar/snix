@@ -4,15 +4,19 @@ import argparse
 import shlex
 import os
 import subprocess
+import ConfigParser
 
 from command import Command
 from snixContext import snixContext
 from snixCore import abort
+from snixCore import create_dir
 
 from snixLogger import SnixLogger
 
 logger = SnixLogger.logger()
 
+SNIX_CONF_FILE = os.path.join(os.sep, "usr", "local", "etc", "snix" + os.extsep + "conf")
+SNIX_RC_DIR_NAME = "rc"
 
 class Snix:
     """The Actual Snix CLI command. Type snix --help for more information"""
@@ -21,14 +25,13 @@ class Snix:
         self._args = args
 
     def go(self):
-        args = self._args
         action = {
             "init": self.init,
             "test": self.test,
             "run": self.run,
-        }.get(args.action)
-        if args.argument:
-            self._perform(action, args.argument)
+        }.get(self._args.action)
+        if self._args.argument:
+            self._perform(action, self._args.argument)
         else:
             self._perform(action)
 
@@ -36,56 +39,36 @@ class Snix:
         logger.info("`snix {0}` with args: {1}".format(action.__name__, args))
         action(*args)
 
-    #TODO generate keys and upload to github.
-    def _configure_git(self,email):
+    # TODO generate keys and upload to github. 
+    def _configure_git(self, _user_email, _user_name):
         msg = "Configuring git..."
 
         try:
-            subprocess.check_call(
-                ['git', 'config', '--global', 'user.email', email], stdin=None, shell=False)
-            output = subprocess.check_output(['git', 'config', '--get', 'user.email', email], stdin=None, shell=False)
-            logger.info(msg + "Set global user email to:%s" % output)
+            subprocess.check_call(['git', 'config', '--global', 'user.email', _user_email], stdin=None, shell=False)
+            subprocess.check_call(['git', 'config', '--global', 'user.name', _user_name], stdin=None, shell=False)
+            logger.info("Set global user email to: %s" % subprocess.check_output(
+                ['git', 'config', '--get', 'user.email'], stdin=None, shell=False))
+            logger.info("Set global user name to: %s" % subprocess.check_output(
+                ['git', 'config', '--get', 'user.name'], stdin=None, shell=False))
         except subprocess.CalledProcessError as e:
             abort(msg + "{0} exited with error code{1}".format(e.cmd, e.returncode))
         logger.info(msg + 'Done!')
 
-
-    #TODO this is currently mac specific. Also this might require root password.
+    # TODO this is currently mac specific. Also this might require root password.
     def _install_prerequisite_items(self):
         logger.info("Installing prerequisite items...")
         try:
             cmd = 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
-            Command({'command': cmd, 'command_exec_dir': os.getcwd()},True).execute()
+            Command({'command': cmd, 'command_exec_dir': os.getcwd()}, True).execute()
             Command({'command': shlex.split("brew tap caskroom/cask"), 'command_exec_dir': os.getcwd()}).execute()
             Command({'command': shlex.split("brew install python"), 'command_exec_dir': os.getcwd()}).execute()
             Command({'command': shlex.split("pip install jsonschema"), 'command_exec_dir': os.getcwd()}).execute()
         except subprocess.CalledProcessError as e:
             abort("{0} exited with error code{1}".format(e.cmd, e.returncode))
 
-
-
-
-        #
-
-        # self.__createDir(self.manifest.getConfigurationValue("workingDir"))
-        # self.__createDir(self.manifest.getConfigurationValue("rcDir"))
-        # self.manifest.getItem("homebrew").install()
-
-    # def __createDir(self, path):
-    #     dir = os.path.dirname(path)
-    #     if not os.path.exists(dir):
-    #         logger.info("Creating %s." % dir)
-    #         os.makedirs(dir)
-    #     else:
-    #         logger.info("%s already exists." % dir)
-
+    # TODO see if you can build a graph and figure out what can be parallelized here.
     def _execute(self, manifest_file, test):
         snix_context = snixContext.construct_from(manifest_file)
-        #parse and validate manifest. parse and validate all includes recursively
-        #Build an execution snix_context.
-        # 1 Install s/w
-        # 2 Clone repos
-        # 3 Run customizations
         if test:
             logger.info('Test Run Requested. Here\'s what will be executed. ')
             logger.info(snix_context)
@@ -93,7 +76,7 @@ class Snix:
             self._install_items(snix_context)
             self._clone_repos(snix_context)
             self._execute_custom_scripts(snix_context)
-            logger.info("-------->>and we're done! Happy Coding!")
+            logger.info("-------->>We're done! Happy Coding!")
 
     def _install_items(self, context):
         for item in context.get_items():
@@ -117,11 +100,21 @@ class Snix:
 
     def init(self):
         """Initializes snix. Sets up the required directories and tools required for Snix to work."""
+        if not os.path.isfile(SNIX_CONF_FILE):
+            abort("%s is not a valid file path! Looks like snix wasn't bootstrapped." % SNIX_CONF_FILE)
+        parser = ConfigParser.ConfigParser()
+        parser.read(SNIX_CONF_FILE)
+        snix_home = parser.get("config", "snix.home")
+        snix_rc_dir = os.path.join(snix_home, SNIX_RC_DIR_NAME)
+        create_dir(snix_rc_dir)
+
         self._install_prerequisite_items()
 
-        email = raw_input('Please enter your email address:')
-        self._configure_git(email)
-        # intialize git. conigure user name . configure email
+        user_email = raw_input('What email address should I configure Git with ? ')
+        user_name= user_email.split('@')[0]
+        self._configure_git(user_email, user_name)
+
+        # config = {"email": user_email, "snix_root": snix_home, "snix_rc_dir": snix_rc_dir}
 
 
 if __name__ == "__main__":
@@ -129,16 +122,11 @@ if __name__ == "__main__":
     cliParser.add_argument("action", choices=['init', 'test', 'run'], help="An action that snix can perform.")
     cliParser.add_argument("argument", help="Additional argument for a specified action", nargs='?')
     args = cliParser.parse_args()
+    Snix(args).go()
 
-# TODO: shouldn't have to call this everytime.
-# TODO : how do I document each action
-    snix = Snix(args)
-    snix.go()
-
-# TODO tab completion.
-# TODO brew installer isn't dumping warning output.
-# TODO clean up the warnings.
-# TODO init should complain if bootstrap hasn't already run.
-# TODO complain if commands that take an argument don't get one. Right now it just fails.
+    # TODO tab completion.
+    # TODO brew installer isn't dumping warning output.
+    # TODO clean up the warnings.
+    # TODO complain if commands that take an argument don't get one. Right now it just fails.
     # TODO: extract all the subprocess stuff into a method. - > move to snix.py
     # TODO: validate email address. -> move to snix.py
