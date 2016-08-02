@@ -39,7 +39,7 @@ class Snix:
         logger.info("`snix {0}` with args: {1}".format(action.__name__, args))
         action(*args)
 
-    # TODO generate keys and upload to github. 
+    # TODO generate keys and upload to github.
     def _configure_git(self, _user_email, _user_name):
         msg = "Configuring git..."
 
@@ -61,6 +61,7 @@ class Snix:
             cmd = 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'
             Command({'command': cmd, 'command_exec_dir': os.getcwd()}, True).execute()
             Command({'command': shlex.split("brew tap caskroom/cask"), 'command_exec_dir': os.getcwd()}).execute()
+            Command({'command': shlex.split("brew tap homebrew/versions"), 'command_exec_dir': os.getcwd()}).execute()
             Command({'command': shlex.split("brew install python"), 'command_exec_dir': os.getcwd()}).execute()
             Command({'command': shlex.split("pip install jsonschema"), 'command_exec_dir': os.getcwd()}).execute()
         except subprocess.CalledProcessError as e:
