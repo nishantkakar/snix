@@ -117,7 +117,7 @@ def install_xcode_devtools():
         list_updates.stdout.close()
 
         logger.info(msg + 'Installing ' + tool_name)
-        install = subprocess.Popen(['softwareupdate', '-iv', tool_name], stdin=None, stdout=subprocess.PIPE)
+        install = subprocess.Popen(['softwareupdate', '-i', '--verbose', tool_name], stdin=None, stdout=subprocess.PIPE)
         while True:
             output = install.stdout.readline()
             if output == '' and install.poll() is not None:
