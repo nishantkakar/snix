@@ -100,13 +100,9 @@ def install_xcode_devtools():
         logger.info(msg + "Already installed!")
         return
 
-    ver = re.match(r'(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)', platform.mac_ver()[0])
-    if not int(ver.group('major')) >= 10 and not int(ver.group('minor')) >= 9:
-        abort("OSX version lower than 10.9 not supported. Sorry!")
-
     tmp_file = "/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
-    open(tmp_file, 'a').close()
-    os.utime(tmp_file, None)
+    with open(tmp_file, 'a'):
+        os.utime(tmp_file, None)
 
     try:
         logger.info(msg + 'Searching')
@@ -114,6 +110,7 @@ def install_xcode_devtools():
         find_xcode_cli = subprocess.Popen(['grep', "*.*Command Line"], stdin=list_updates.stdout,
                                           stdout=subprocess.PIPE)
         result = find_xcode_cli.communicate()[0]
+        logger.info(result)
         if result is None:
             abort(msg + "Not found.")
         tool_name = result.split('*')[1].strip()
