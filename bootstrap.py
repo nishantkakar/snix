@@ -13,7 +13,8 @@ SYS_HOME = os.environ['HOME']
 DEFAULT_INSTALL_DIR = os.path.join(SYS_HOME, 'lab')
 SNIX_EXECUTABLE = 'snix'
 SNIX_CODE_DIR = '_' + SNIX_EXECUTABLE
-SNIX_CONF_FILE = os.path.join(os.sep, "usr", "local", "etc", SNIX_EXECUTABLE + os.extsep + "conf")
+SNIX_CONF_DIR = os.path.join(SYS_HOME,os.extsep + SNIX_EXECUTABLE)
+SNIX_CONF_FILE = os.path.join(SNIX_CONF_DIR, SNIX_EXECUTABLE + os.extsep + "conf")
 
 KEY_SNIX_HOME = 'snix.home'
 
@@ -213,25 +214,28 @@ def bootstrap_in(_dir):
 #     return config
 
 
-def add_snix_to_path(_snix_home):
+def create_bin_dir(_snix_home):
+    _snix_bin_dir=os.path.join(_snix_home,"_bin")
+    _snix_bin = os.path.join(_snix_bin_dir, SNIX_EXECUTABLE)
+    create_dir(_snix_bin_dir)
     _snix_executable = os.path.join(_snix_home, SNIX_CODE_DIR, SNIX_EXECUTABLE)
-    _usr_local_bin_snix = os.path.join(os.sep, "usr", "local", "bin", SNIX_EXECUTABLE)
-    if not os.path.islink(_usr_local_bin_snix):
-        logger.info("Adding {src} to path({dst})".format(src=_snix_executable, dst=_usr_local_bin_snix))
-        os.symlink(_snix_executable, _usr_local_bin_snix)
+    if not os.path.islink(_snix_bin):
+        logger.info("Creating symlink for  {src} in {dst}".format(src=_snix_executable, dst=_snix_bin))
+        os.symlink(_snix_executable, _snix_bin)
     else:
-        logger.info("{src} already exists in path({dst})".format(src=_snix_executable, dst=_usr_local_bin_snix))
-    logger.info("Configuring Path...Done!")
+        logger.info("{src} already exists in {dst}".format(src=_snix_executable, dst=_snix_bin_dir))
+    logger.info("Created bin directory...Done!")
+    return _snix_bin_dir
 
 
 def write_snix_config(_snix_home):
     _config = ConfigParser.RawConfigParser()
     _config.add_section("config")
     _config.set("config", KEY_SNIX_HOME, _snix_home)
-    _snix_conf_file_path = os.path.join(os.sep, "usr", "local", "etc", SNIX_CONF_FILE)
-    with open(_snix_conf_file_path, 'wb') as f:
+    create_dir(SNIX_CONF_DIR)
+    with open(SNIX_CONF_FILE, 'wb') as f:
         _config.write(f)
-    logger.info("Snix configuration written in %s" % _snix_conf_file_path)
+    logger.info("Snix configuration written in %s" % SNIX_CONF_FILE)
     logger.info("Writing config file...Done!")
 
 
@@ -256,10 +260,11 @@ if __name__ == "__main__":
 
     snix_home = bootstrap_in(_args.install_dir_name)
 
-    add_snix_to_path(snix_home)
+    snix_home_bin=create_bin_dir(snix_home)
 
     write_snix_config(snix_home)
 
     logger.info("-------->>We're now ready to initialize snix.")
-    logger.info("Please run the following command : snix init")
+    logger.info("Please run the following command : export PATH=$PATH:{shb};snix init".format(shb=snix_home_bin))
+    logger.info("Alternatively, add the export statement to your shell rc file and run: snix init")
     logger.info("-------->>Thanks for Snix-ing! ")
