@@ -7,7 +7,6 @@ import subprocess
 import ConfigParser
 
 from command import Command
-from snixContext import snixContext
 from snixCore import abort
 from snixCore import create_dir
 
@@ -15,7 +14,7 @@ from snixLogger import SnixLogger
 
 logger = SnixLogger.logger()
 
-SNIX_CONF_FILE = os.path.join(os.sep, "usr", "local", "etc", "snix" + os.extsep + "conf")
+SNIX_CONF_FILE = os.path.join(os.environ["HOME"],".snix","snix.conf")
 SNIX_RC_DIR_NAME = "rc"
 
 class Snix:
@@ -69,6 +68,7 @@ class Snix:
 
     # TODO see if you can build a graph and figure out what can be parallelized here.
     def _execute(self, manifest_file, test):
+	from snixContext import snixContext
         snix_context = snixContext.construct_from(manifest_file)
         if test:
             logger.info('Test Run Requested. Here\'s what will be executed. ')
@@ -111,8 +111,9 @@ class Snix:
 
         self._install_prerequisite_items()
 
-        user_email = raw_input('What email address should I configure Git with ? ')
-        user_name= user_email.split('@')[0]
+        user_email = raw_input("What email address should I configure git with? ")
+        user_name_suggestion = user_email.split('@')[0]
+	user_name = raw_input("What user name should I configure git with? Press Enter to accept suggestion[%s]:" %user_name_suggestion) or user_name_suggestion
         self._configure_git(user_email, user_name)
 
         # config = {"email": user_email, "snix_root": snix_home, "snix_rc_dir": snix_rc_dir}
