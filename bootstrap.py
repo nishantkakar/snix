@@ -97,7 +97,7 @@ def install_xcode_devtools():
     github.com/timsutton/osx-vm-templates/blob/ce8df8a7468faa7c5312444ece1b977c1b2f77a4/scripts/xcode-cli-tools.sh """
 
     msg = "XCode Developer Tools..."
-    if os.path.exists(os.path.join(os.sep, 'Library', 'Developer', 'CommandLineTools')):
+    if os.path.exists(os.path.join(os.sep, 'Library', 'Developer', 'CommandLineTools' , 'usr' , 'bin')):
         logger.info(msg + "Already installed!")
         return
 
